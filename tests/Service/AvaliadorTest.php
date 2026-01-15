@@ -13,6 +13,11 @@ class AvaliadorTest extends TestCase
 {
     private Avaliador $leiloeiro;
 
+    protected function setUp(): void
+    {
+        $this->leiloeiro = new Avaliador();
+    }
+
     public static function entregaLeiloes()
     {
         return [
@@ -121,8 +126,24 @@ class AvaliadorTest extends TestCase
         self::assertEquals(1500, $maioresValores[2]->getValor());
     }
 
-    protected function setUp(): void
+    public function testLeilaoVazioNaoPodeSerAvaliado()
     {
-        $this->leiloeiro = new Avaliador();
+        $this->expectException(\DomainException::class);
+        $this->expectExceptionMessage(Avaliador::LISTA_MENSAGENS_DE_ERRO['leilao-vazio']);
+
+        $leilao = new Leilao('Fusca Azul');
+        $this->leiloeiro->avalia($leilao);
+    }
+
+    public function testLeilaoFinalizadoNaoPodeSerAvaliado()
+    {
+        $this->expectException(\DomainException::class);
+        $this->expectExceptionMessage(Avaliador::LISTA_MENSAGENS_DE_ERRO['leilao-finalizado']);
+
+        $leilao = new Leilao('Fiat 147 0KM');
+        $leilao->recebeLance(new Lance(new Usuario('Teste'), 2000));
+        $leilao->finaliza();
+
+        $this->leiloeiro->avalia($leilao);
     }
 }

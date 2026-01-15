@@ -4,28 +4,43 @@ namespace Alura\Leilao\Model;
 
 class Leilao
 {
+    public const LISTA_MENSAGENS_DE_ERRO = [
+        'usuario-nao-pode-propor-2-lances-consecutivos' => 'Usuário não pode propor 2 lances consecutivos.',
+        'usuario-fez-5-lances' => 'Usuário não pode propor mais de 5 lances por leilão.'
+    ];
+
     /** @var Lance[] */
     private $lances;
+
     /** @var string */
     private $descricao;
+
+    /** @var bool */
+    private $finalizado;
 
     public function __construct(string $descricao)
     {
         $this->descricao = $descricao;
         $this->lances = [];
+        $this->finalizado = false;
     }
 
     public function recebeLance(Lance $lance)
     {
         if (count($this->lances) && $this->lanceEhDoUltimoUsuario($lance)) {
-            return;
+            throw new \DomainException($this::LISTA_MENSAGENS_DE_ERRO['usuario-nao-pode-propor-2-lances-consecutivos']);
         }
 
         if ($this->quantidadeLancesPorUsuario($lance->getUsuario()) >= 5) {
-            return;
+            throw new \DomainException($this::LISTA_MENSAGENS_DE_ERRO['usuario-fez-5-lances']);
         }
 
         $this->lances[] = $lance;
+    }
+
+    public function finaliza()
+    {
+        $this->finalizado = true;     
     }
 
     /**
@@ -34,6 +49,11 @@ class Leilao
     public function getLances(): array
     {
         return $this->lances;
+    }
+
+    public function getFinalizado(): bool
+    {
+        return $this->finalizado;
     }
 
     private function lanceEhDoUltimoUsuario(Lance $lance): bool

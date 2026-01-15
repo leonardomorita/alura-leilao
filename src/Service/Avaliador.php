@@ -7,13 +7,26 @@ use Alura\Leilao\Model\Leilao;
 
 class Avaliador
 {
+    public const LISTA_MENSAGENS_DE_ERRO = [
+        'leilao-vazio' => 'Não é possível avaliar leilão vazio.',
+        'leilao-finalizado' => 'Leilão finalizado.'
+    ];
+
     private $maiorValor = -INF;
     private $menorValor = INF;
     private $maioresLances;
 
     public function avalia(Leilao $leilao): void
     {
+        if ($leilao->getFinalizado()) {
+            throw new \DomainException($this::LISTA_MENSAGENS_DE_ERRO['leilao-finalizado']);
+        }
+
         $lances = $leilao->getLances();
+
+        if (empty($lances)) {
+            throw new \DomainException($this::LISTA_MENSAGENS_DE_ERRO['leilao-vazio']);
+        }
 
         foreach ($lances as $lance) {
             $valorDoLance = $lance->getValor();
