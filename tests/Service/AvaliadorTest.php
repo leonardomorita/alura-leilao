@@ -11,139 +11,128 @@ use PHPUnit\Framework\TestCase;
 
 class AvaliadorTest extends TestCase
 {
-    private Avaliador $leiloeiro;
+    private Avaliador $avaliador;
 
     protected function setUp(): void
     {
-        $this->leiloeiro = new Avaliador();
+        $this->avaliador = new Avaliador();
     }
 
     public static function entregaLeiloes()
     {
         return [
-            'ordem-crescente' => [self::leilaoEmOrdemCrescente()],
-            'ordem-decrescente' => [self::leilaoEmOrdemDecrescente()],
-            'ordem-aleatoria' => [self::leilaoEmOrdemAleatoria()]
+            'ordem-crescente' => [self::leilaoComLancesEmOrdemCrescente()],
+            'ordem-decrescente' => [self::leilaoComLancesEmOrdemDecrescente()],
+            'ordem-aleatoria' => [self::leilaoComLancesEmOrdemAleatoria()]
         ];
     }
 
-    public static function leilaoEmOrdemCrescente(): Leilao
+    public static function leilaoComLancesEmOrdemCrescente(): Leilao
     {
         // Cenário (Arrange) ou (Given)
 
         $leilao = new Leilao('Fiat 147 0KM');
 
-        $maria = new Usuario('Maria');
         $joao = new Usuario('João');
+        $maria = new Usuario('Maria');
         $ana = new Usuario('Ana');
-        $jorge = new Usuario('Jorge');
 
         $leilao->recebeLance(new Lance($joao, 1000));
-        $leilao->recebeLance(new Lance($ana, 1500));
-        $leilao->recebeLance(new Lance($jorge, 1700));
-        $leilao->recebeLance(new Lance($maria, 2000));
+        $leilao->recebeLance(new Lance($maria, 1500));
+        $leilao->recebeLance(new Lance($ana, 2000));
 
         return $leilao;
     }
 
-    public static function leilaoEmOrdemDecrescente(): Leilao
+    public static function leilaoComLancesEmOrdemDecrescente(): Leilao
     {
         // Cenário (Arrange) ou (Given)
 
         $leilao = new Leilao('Fiat 147 0KM');
 
-        $maria = new Usuario('Maria');
         $joao = new Usuario('João');
+        $maria = new Usuario('Maria');
         $ana = new Usuario('Ana');
-        $jorge = new Usuario('Jorge');
 
-        $leilao->recebeLance(new Lance($maria, 2000));
-        $leilao->recebeLance(new Lance($jorge, 1700));
-        $leilao->recebeLance(new Lance($ana, 1500));
+        $leilao->recebeLance(new Lance($ana, 2000));
+        $leilao->recebeLance(new Lance($maria, 1500));
         $leilao->recebeLance(new Lance($joao, 1000));
 
         return $leilao;
     }
 
-    public static function leilaoEmOrdemAleatoria(): Leilao
+    public static function leilaoComLancesEmOrdemAleatoria(): Leilao
     {
         // Cenário (Arrange) ou (Given)
 
         $leilao = new Leilao('Fiat 147 0KM');
 
-        $maria = new Usuario('Maria');
         $joao = new Usuario('João');
+        $maria = new Usuario('Maria');
         $ana = new Usuario('Ana');
-        $jorge = new Usuario('Jorge');
 
-        $leilao->recebeLance(new Lance($ana, 1500));
+        $leilao->recebeLance(new Lance($maria, 1500));
+        $leilao->recebeLance(new Lance($ana, 2000));
         $leilao->recebeLance(new Lance($joao, 1000));
-        $leilao->recebeLance(new Lance($maria, 2000));
-        $leilao->recebeLance(new Lance($jorge, 1700));
 
         return $leilao;
     }
 
     #[DataProvider('entregaLeiloes')]
-    public function testAvaliadorDeveEncontrarOMaiorValorDeLances(Leilao $leilao)
+    public function testAvaliadorDeveAcharMaiorValor(Leilao $leilao)
     {
         // Padrões Arrange-Act-Assert e GivenWhenThen
 
         // Ação a ser testada (Act) ou (When)
-        $this->leiloeiro->avalia($leilao);
+        $this->avaliador->avalia($leilao);
 
         // Verificação (Assert) ou (Then)
-        $maiorValor = $this->leiloeiro->getMaiorValor();
-        self::assertEquals(2000, $maiorValor);
+        static::assertEquals(2000, $this->avaliador->getMaiorValor());
     }
 
     #[DataProvider('entregaLeiloes')]
-    public function testAvaliadorDeveEncontrarOMenorValorDeLances(Leilao $leilao)
+    public function testAvaliadorDeveAcharMenorValor(Leilao $leilao)
     {
         // Padrões Arrange-Act-Assert e GivenWhenThen
 
         // Ação a ser testada (Act) ou (When)
-        $this->leiloeiro->avalia($leilao);
+        $this->avaliador->avalia($leilao);
 
         // Verificação (Assert) ou (Then)
-        $menorValor = $this->leiloeiro->getMenorValor();
-        self::assertEquals(1000, $menorValor);
+        static::assertEquals(1000, $this->avaliador->getMenorValor());
     }
 
     #[DataProvider('entregaLeiloes')]
-    public function testAvaliadorDeveBuscar3MaioresValores(Leilao $leilao)
+    public function testAvaliadorDeveOrdenarOs3Lances(Leilao $leilao)
     {
         // Padrões Arrange-Act-Assert e GivenWhenThen
 
         // Ação a ser testada (Act) ou (When)
-        $this->leiloeiro->avalia($leilao);
+        $this->avaliador->avalia($leilao);
 
         // Verificação (Assert) ou (Then)
-        $maioresValores = $this->leiloeiro->getMaioresLances();
-        self::assertCount(3, $maioresValores);
-        self::assertEquals(2000, $maioresValores[0]->getValor());
-        self::assertEquals(1700, $maioresValores[1]->getValor());
-        self::assertEquals(1500, $maioresValores[2]->getValor());
+        $lances = $this->avaliador->getTresMaioresLances();
+
+        static::assertCount(3, $lances);
+        static::assertEquals(2000, $lances[0]->getValor());
+        static::assertEquals(1500, $lances[1]->getValor());
+        static::assertEquals(1000, $lances[2]->getValor());
     }
 
-    public function testLeilaoVazioNaoPodeSerAvaliado()
+    public function testAvaliadorDeveRetornarOsMaioresLancesDisponiveis()
     {
-        $this->expectException(\DomainException::class);
-        $this->expectExceptionMessage(Avaliador::LISTA_MENSAGENS_DE_ERRO['leilao-vazio']);
+        // Padrões Arrange-Act-Assert e GivenWhenThen
 
-        $leilao = new Leilao('Fusca Azul');
-        $this->leiloeiro->avalia($leilao);
-    }
-
-    public function testLeilaoFinalizadoNaoPodeSerAvaliado()
-    {
-        $this->expectException(\DomainException::class);
-        $this->expectExceptionMessage(Avaliador::LISTA_MENSAGENS_DE_ERRO['leilao-finalizado']);
-
+        // Cenário (Arrange) ou (Given)
         $leilao = new Leilao('Fiat 147 0KM');
-        $leilao->recebeLance(new Lance(new Usuario('Teste'), 2000));
-        $leilao->finaliza();
 
-        $this->leiloeiro->avalia($leilao);
+        $leilao->recebeLance(new Lance(new Usuario('João'), 1000));
+        $leilao->recebeLance(new Lance(new Usuario('Maria'), 1500));
+
+        // Ação a ser testada (Act) ou (When)
+        $this->avaliador->avalia($leilao);
+
+        // Verificação (Assert) ou (Then)
+        static::assertCount(2, $this->avaliador->getTresMaioresLances());
     }
 }

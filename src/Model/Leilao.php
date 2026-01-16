@@ -5,8 +5,8 @@ namespace Alura\Leilao\Model;
 class Leilao
 {
     public const LISTA_MENSAGENS_DE_ERRO = [
-        'usuario-nao-pode-propor-2-lances-consecutivos' => 'Usuário não pode propor 2 lances consecutivos.',
-        'usuario-fez-5-lances' => 'Usuário não pode propor mais de 5 lances por leilão.'
+        'leilao-finalizado' => 'Este leilão já está finalizado',
+        'usuario-ja-deu-o-ultimo-lance' => 'Usuário já deu o último lance',
     ];
 
     /** @var Lance[] */
@@ -18,21 +18,33 @@ class Leilao
     /** @var bool */
     private $finalizado;
 
-    public function __construct(string $descricao)
+    /** @var \DateTimeInterface */
+    private $dataInicio;
+
+    /** @var int */
+    private $id;
+
+    public function __construct(string $descricao, \DateTimeImmutable $dataInicio = null, int $id = null)
     {
         $this->descricao = $descricao;
-        $this->lances = [];
         $this->finalizado = false;
+        $this->lances = [];
+        $this->dataInicio = $dataInicio ?? new \DateTimeImmutable();
+        $this->id = $id;
     }
 
     public function recebeLance(Lance $lance)
     {
-        if (count($this->lances) && $this->lanceEhDoUltimoUsuario($lance)) {
-            throw new \DomainException($this::LISTA_MENSAGENS_DE_ERRO['usuario-nao-pode-propor-2-lances-consecutivos']);
+        if ($this->finalizado) {
+            throw new \DomainException(self::LISTA_MENSAGENS_DE_ERRO['leilao-finalizado']);
         }
 
-        if ($this->quantidadeLancesPorUsuario($lance->getUsuario()) >= 5) {
-            throw new \DomainException($this::LISTA_MENSAGENS_DE_ERRO['usuario-fez-5-lances']);
+        $ultimoLance = empty($this->lances)
+            ? null
+            : $this->lances[count($this->lances) - 1];
+
+        if (!empty($this->lances) && $ultimoLance->getUsuario() == $lance->getUsuario()) {
+            throw new \DomainException(self::LISTA_MENSAGENS_DE_ERRO['usuario-ja-deu-o-ultimo-lance']);
         }
 
         $this->lances[] = $lance;
@@ -40,7 +52,7 @@ class Leilao
 
     public function finaliza()
     {
-        $this->finalizado = true;     
+        $this->finalizado = true;
     }
 
     /**
@@ -51,38 +63,31 @@ class Leilao
         return $this->lances;
     }
 
-    public function getFinalizado(): bool
+    public function recuperarDescricao(): string
+    {
+        return $this->descricao;
+    }
+
+    public function estaFinalizado(): bool
     {
         return $this->finalizado;
     }
 
-    private function lanceEhDoUltimoUsuario(Lance $lance): bool
+    public function recuperarDataInicio(): \DateTimeInterface
     {
-        // $ultimoLance = $this->lances[count($this->lances) - 1];
-        $ultimoLance = $this->lances[array_key_last($this->lances)];
-
-        return $lance->getUsuario() == $ultimoLance->getUsuario();
+        return $this->dataInicio;
     }
 
-    /**
-     * Retorna a quantidade de lances por um usuário específico.
-     * 
-     * @param Usuario $usuario Usuário a ser verificado.
-     * 
-     * @return int Quantidade de lances pelo usuário.
-     */
-    private function quantidadeLancesPorUsuario(Usuario $usuario): int
+    public function temMaisDeUmaSemana(): bool
     {
-        return array_reduce(
-            $this->lances,
-            function (int $totalAcumulado, Lance $lanceAtual) use ($usuario) {
-                if ($lanceAtual->getUsuario() == $usuario) {
-                    return $totalAcumulado + 1;
-                }
-                
-                return $totalAcumulado;
-            },
-            0
-        );
+        $hoje = new \DateTime();
+        $intervalo = $this->dataInicio->diff($hoje);
+
+        return $intervalo->days > 7;
+    }
+
+    public function recuperarId(): int
+    {
+        return $this->id;
     }
 }
