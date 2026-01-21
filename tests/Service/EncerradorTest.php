@@ -31,6 +31,11 @@ class EncerradorTest extends TestCase
 
         $leilaoDao = $this->createMock(LeilaoDao::class);
 
+        // Criar um mock personalizado para o LeilaoDao. Dessa maneira, podemos atribuir argumentos no construtor da classe.
+        // $leilaoDao = $this->getMockBuilder(LeilaoDao::class)
+        //     ->setConstructorArgs([new \PDO('sqlite::memory:')])
+        //     ->getMock();
+
         $leilaoDao->method('recuperarNaoFinalizados')
             ->willReturn([$this->leilaoFiat147, $this->leilaoVariant]);
 
@@ -71,6 +76,17 @@ class EncerradorTest extends TestCase
         $this->enviadorEmail->expects($this->exactly(2))
             ->method('notificarTerminoLeilao')
             ->willThrowException($e);
+
+        $this->encerrador->encerra();
+    }
+
+    public function testSoDeveEnviarEmailLeilaoTerminoAposFinalizado()
+    {
+        $this->enviadorEmail->expects($this->exactly(2))
+            ->method('notificarTerminoLeilao')
+            ->willReturnCallback(function (Leilao $leilao) {
+                self::assertTrue($leilao->estaFinalizado());
+            });
 
         $this->encerrador->encerra();
     }
