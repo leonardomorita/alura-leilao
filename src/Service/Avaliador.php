@@ -7,48 +7,30 @@ use Alura\Leilao\Model\Leilao;
 
 class Avaliador
 {
-    public const LISTA_MENSAGENS_DE_ERRO = [
-        'leilao-vazio' => 'Não é possível avaliar leilão vazio.',
-        'leilao-finalizado' => 'Leilão finalizado.'
-    ];
-
-    private $maiorValor = -INF;
+    /** @var float */
     private $menorValor = INF;
-    private $maioresLances;
 
-    public function avalia(Leilao $leilao): void
+    /** @var float */
+    private $maiorValor = 0;
+
+    /** @var Lance[]|array */
+    private $maiores;
+
+    public function avalia(Leilao $leilao)
     {
-        if ($leilao->getFinalizado()) {
-            throw new \DomainException($this::LISTA_MENSAGENS_DE_ERRO['leilao-finalizado']);
-        }
+        $leilao->finaliza();
 
-        $lances = $leilao->getLances();
-
-        if (empty($lances)) {
-            throw new \DomainException($this::LISTA_MENSAGENS_DE_ERRO['leilao-vazio']);
-        }
-
-        foreach ($lances as $lance) {
-            $valorDoLance = $lance->getValor();
-            if ($valorDoLance > $this->maiorValor) {
-                $this->maiorValor = $valorDoLance;
-            } 
-            
-            if ($valorDoLance < $this->menorValor) {
-                $this->menorValor = $valorDoLance;
+        foreach ($leilao->getLances() as $lance) {
+            if ($lance->getValor() > $this->maiorValor) {
+                $this->maiorValor = $lance->getValor();
             }
+
+            if ($lance->getValor() < $this->menorValor) {
+                $this->menorValor = $lance->getValor();
+            }
+
+            $this->maiores = $this->avaliaTresMaioresLances($leilao);
         }
-
-        usort($lances, function (Lance $lance1, Lance $lance2) {
-            return $lance2->getValor() - $lance1->getValor();
-        });
-
-        $this->maioresLances = array_slice($lances, 0, 3);
-    }
-
-    public function getMaiorValor(): float
-    {
-        return $this->maiorValor;
     }
 
     public function getMenorValor(): float
@@ -56,11 +38,30 @@ class Avaliador
         return $this->menorValor;
     }
 
+    public function getMaiorValor(): float
+    {
+        return $this->maiorValor;
+    }
+
     /**
      * @return Lance[]
      */
-    public function getMaioresLances(): array
+    public function getTresMaioresLances(): array
     {
-        return $this->maioresLances;
+        return $this->maiores;
+    }
+
+    /**
+     * @param Leilao $leilao
+     * @return Lance[]|array
+     */
+    private function avaliaTresMaioresLances(Leilao $leilao)
+    {
+        $lances = $leilao->getLances();
+        usort($lances, function (Lance $lance1, Lance $lance2) {
+            return $lance2->getValor() - $lance1->getValor();
+        });
+
+        return array_slice($lances, 0, 3);
     }
 }
