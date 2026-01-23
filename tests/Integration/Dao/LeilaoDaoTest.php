@@ -68,6 +68,25 @@ class LeilaoDaoTest extends TestCase
         self::assertTrue($leiloes[0]->estaFinalizado());
     }
 
+    public function testAoAtualizarLeilaoStatusDeveSerAlterado()
+    {
+        // Arrange
+        $leilaoDao = new LeilaoDao(self::$pdo);
+
+        $leilao = new Leilao('Brasilia Amarela');
+        $leilao = $leilaoDao->salva($leilao);
+        $leilao->finaliza();
+
+        // Act
+        $leilaoDao->atualiza($leilao);
+
+        // Assert
+        $leiloes = $leilaoDao->recuperarFinalizados();
+        self::assertCount(1, $leiloes);
+        self::assertSame('Brasilia Amarela', $leiloes[0]->recuperarDescricao());
+        self::assertTrue($leiloes[0]->estaFinalizado());
+    }
+
     protected function tearDown(): void
     {
         self::$pdo->rollBack();
